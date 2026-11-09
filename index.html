@@ -1,0 +1,1851 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtual City Explorer: Visiting Places & Directions (Kelas 5 SD)</title>
+    <style>
+        /* --- RESET & FIXED 16:9 ASPECT RATIO VIEWPORT --- */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+            font-family: 'Fredoka', 'Quicksand', 'Segoe UI', Roboto, sans-serif;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #081c24;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #app-scaler {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+        }
+
+        #app-viewport {
+            width: 1280px;
+            height: 720px;
+            background: linear-gradient(135deg, #0f2b36 0%, #173d4d 100%);
+            position: relative;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8);
+            border-radius: 16px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            transform-origin: center center;
+        }
+
+        /* --- SPLASH SCREEN --- */
+        #splash-screen {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, #0d9488 0%, #0284c7 50%, #6366f1 100%);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            transition: opacity 0.5s ease, visibility 0.5s;
+        }
+
+        .splash-badge {
+            background: rgba(255, 255, 255, 0.25);
+            padding: 0.5rem 1.4rem;
+            border-radius: 9999px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            margin-bottom: 1rem;
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            box-shadow: 0 6px 15px rgba(0,0,0,0.2);
+        }
+
+        .splash-title {
+            font-size: 2.5rem;
+            font-weight: 900;
+            margin-bottom: 0.6rem;
+            text-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            line-height: 1.2;
+        }
+
+        .splash-subtitle {
+            font-size: 1.15rem;
+            opacity: 0.95;
+            margin-bottom: 2rem;
+            max-width: 680px;
+            font-weight: 500;
+        }
+
+        .progress-box {
+            width: 320px;
+            background: rgba(0, 0, 0, 0.3);
+            height: 18px;
+            border-radius: 9px;
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #f59e0b, #10b981);
+            border-radius: 9px;
+            transition: width 0.2s ease;
+        }
+
+        .splash-btn {
+            background: #f59e0b;
+            color: #0f2b36;
+            font-size: 1.3rem;
+            font-weight: 800;
+            padding: 0.85rem 3rem;
+            border: none;
+            border-radius: 9999px;
+            cursor: pointer;
+            box-shadow: 0 10px 25px rgba(245, 158, 11, 0.5);
+            transition: transform 0.2s, background 0.2s;
+            display: none;
+        }
+
+        .splash-btn:hover {
+            transform: translateY(-3px) scale(1.04);
+            background: #d97706;
+            color: white;
+        }
+
+        /* --- HEADER & NAVIGATION --- */
+        header {
+            height: 62px;
+            background: #0b1f28;
+            border-bottom: 2px solid #1e495a;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 1.25rem;
+            color: white;
+            z-index: 10;
+        }
+
+        .app-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .app-brand-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #0284c7, #0d9488);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            box-shadow: 0 4px 10px rgba(2, 132, 199, 0.4);
+        }
+
+        .app-title-text {
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: #f8fafc;
+        }
+
+        .app-sub-text {
+            font-size: 0.75rem;
+            color: #38bdf8;
+            font-weight: 600;
+        }
+
+        nav {
+            display: flex;
+            gap: 0.4rem;
+            background: #07151c;
+            padding: 0.3rem;
+            border-radius: 10px;
+        }
+
+        .nav-btn {
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            padding: 0.5rem 0.95rem;
+            font-weight: 700;
+            font-size: 0.85rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .nav-btn:hover {
+            color: #f8fafc;
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .nav-btn.active {
+            background: #0284c7;
+            color: #ffffff;
+            box-shadow: 0 4px 10px rgba(2, 132, 199, 0.5);
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .icon-btn {
+            background: #173d4d;
+            border: 1px solid #24586d;
+            color: #f8fafc;
+            width: 38px;
+            height: 38px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            transition: background 0.2s;
+        }
+
+        .icon-btn:hover {
+            background: #0284c7;
+        }
+
+        /* --- MAIN CONTENT LAYOUT --- */
+        main {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            background: #0b1f28;
+        }
+
+        .tab-content {
+            position: absolute;
+            inset: 0;
+            padding: 1.1rem;
+            display: none;
+            overflow-y: auto;
+            color: #f8fafc;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .tab-content::-webkit-scrollbar {
+            width: 8px;
+        }
+        .tab-content::-webkit-scrollbar-track {
+            background: #0f2b36;
+        }
+        .tab-content::-webkit-scrollbar-thumb {
+            background: #24586d;
+            border-radius: 4px;
+        }
+
+        /* --- TAB 1: TEORI --- */
+        .teori-subnav {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .subtab-btn {
+            background: #173d4d;
+            border: 1px solid #24586d;
+            color: #94a3b8;
+            padding: 0.45rem 1rem;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .subtab-btn.active {
+            background: #f59e0b;
+            color: #0f2b36;
+            border-color: #f59e0b;
+        }
+
+        .teori-section-title {
+            font-size: 1.05rem;
+            color: #38bdf8;
+            font-weight: 800;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .vocab-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .vocab-card {
+            background: #173d4d;
+            border: 2px solid #24586d;
+            border-radius: 12px;
+            padding: 0.7rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 0.4rem;
+            cursor: pointer;
+            transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+            position: relative;
+        }
+
+        .vocab-card:hover {
+            transform: translateY(-4px);
+            border-color: #38bdf8;
+            box-shadow: 0 8px 16px rgba(56, 189, 248, 0.25);
+        }
+
+        .vocab-icon {
+            font-size: 2.2rem;
+        }
+
+        .vocab-card h4 {
+            font-size: 0.9rem;
+            color: #ffffff;
+            font-weight: 800;
+        }
+
+        .vocab-card p {
+            font-size: 0.75rem;
+            color: #94a3b8;
+        }
+
+        .audio-pill {
+            background: #0284c7;
+            color: white;
+            padding: 0.2rem 0.6rem;
+            border-radius: 9999px;
+            font-size: 0.68rem;
+            font-weight: 700;
+            margin-top: 0.2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+
+        .direction-cards-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.75rem;
+        }
+
+        .direction-card {
+            background: #173d4d;
+            border-left: 5px solid #0d9488;
+            border-radius: 10px;
+            padding: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .direction-card:hover {
+            transform: translateX(4px);
+            background: #1e495a;
+        }
+
+        .dir-icon-box {
+            width: 42px;
+            height: 42px;
+            background: #0b1f28;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            flex-shrink: 0;
+            border: 1px solid #24586d;
+        }
+
+        .dir-info h4 {
+            font-size: 0.88rem;
+            color: #f8fafc;
+        }
+
+        .dir-info p {
+            font-size: 0.74rem;
+            color: #94a3b8;
+        }
+
+        /* --- TAB 2: PROSEDUR --- */
+        .procedure-container {
+            max-width: 900px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+        }
+
+        .step-card {
+            background: #173d4d;
+            padding: 0.9rem 1.1rem;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 1.1rem;
+            border: 1px solid #24586d;
+        }
+
+        .step-num {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, #0284c7, #0d9488);
+            color: #ffffff;
+            font-weight: 800;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.15rem;
+            flex-shrink: 0;
+            box-shadow: 0 4px 10px rgba(2, 132, 199, 0.4);
+        }
+
+        .step-info h4 {
+            font-size: 0.98rem;
+            color: #f8fafc;
+            margin-bottom: 0.25rem;
+        }
+
+        .step-info p {
+            font-size: 0.83rem;
+            color: #cbd5e1;
+            line-height: 1.35;
+        }
+
+        /* --- TAB 3: SIMULASI --- */
+        .sim-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.65rem;
+            height: 100%;
+        }
+
+        .sim-header-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #173d4d;
+            padding: 0.45rem 0.9rem;
+            border-radius: 10px;
+            border: 1px solid #24586d;
+        }
+
+        .sim-mode-toggle {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .mode-btn {
+            background: #0b1f28;
+            color: #94a3b8;
+            border: 1px solid #24586d;
+            padding: 0.4rem 0.85rem;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .mode-btn.active {
+            background: #0284c7;
+            color: #ffffff;
+            border-color: #0284c7;
+        }
+
+        .sim-score-box {
+            font-size: 0.9rem;
+            font-weight: 800;
+            color: #f59e0b;
+            background: #0b1f28;
+            padding: 0.35rem 0.85rem;
+            border-radius: 6px;
+            border: 1px solid #24586d;
+        }
+
+        /* MODE 1: VISUAL CITY MAP NAVIGATION */
+        .sim-area-map {
+            display: grid;
+            grid-template-columns: 1fr 310px;
+            gap: 0.85rem;
+            flex: 1;
+            min-height: 0;
+        }
+
+        .map-visual-board {
+            background: #15803d; /* Grass Base Color */
+            border: 4px solid #1e3a8a;
+            border-radius: 14px;
+            padding: 0.8rem;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 0.8rem;
+            position: relative;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.4);
+            background-image: 
+                radial-gradient(#16a34a 15%, transparent 16%),
+                radial-gradient(#16a34a 15%, transparent 16%);
+            background-size: 30px 30px;
+            background-position: 0 0, 15px 15px;
+        }
+
+        /* Visual Street Decorations */
+        .map-road-h {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            height: 38px;
+            background: #334155;
+            transform: translateY(-50%);
+            border-top: 3px dashed #f59e0b;
+            border-bottom: 3px dashed #f59e0b;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .map-road-v {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 38px;
+            background: #334155;
+            transform: translateX(-50%);
+            border-left: 3px dashed #f59e0b;
+            border-right: 3px dashed #f59e0b;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .street-sign-1 {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #0284c7;
+            color: white;
+            font-size: 0.65rem;
+            font-weight: 800;
+            padding: 2px 8px;
+            border-radius: 4px;
+            z-index: 5;
+            border: 1px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .street-sign-2 {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%) rotate(-90deg);
+            background: #0284c7;
+            color: white;
+            font-size: 0.65rem;
+            font-weight: 800;
+            padding: 2px 8px;
+            border-radius: 4px;
+            z-index: 5;
+            border: 1px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .map-building-card {
+            background: linear-gradient(145deg, #1e293b, #0f172a);
+            border: 3px solid #38bdf8;
+            border-radius: 12px;
+            padding: 0.5rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: relative;
+            z-index: 2;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+        }
+
+        .map-building-card:hover {
+            transform: scale(1.05);
+            border-color: #f59e0b;
+            box-shadow: 0 10px 20px rgba(245, 158, 11, 0.3);
+        }
+
+        .map-building-card.active-target {
+            border-color: #f59e0b;
+            background: linear-gradient(145deg, #78350f, #451a03);
+            animation: targetGlow 1.2s infinite alternate;
+        }
+
+        @keyframes targetGlow {
+            0% { box-shadow: 0 0 5px #f59e0b, 0 0 15px #f59e0b; }
+            100% { box-shadow: 0 0 15px #f59e0b, 0 0 25px #f59e0b; }
+        }
+
+        .map-building-card.player-avatar-box::before {
+            content: '🚌 YOU';
+            position: absolute;
+            top: -10px;
+            right: -8px;
+            background: #ef4444;
+            color: white;
+            font-size: 0.7rem;
+            font-weight: 900;
+            padding: 0.2rem 0.5rem;
+            border-radius: 9999px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.5);
+            border: 2px solid white;
+            z-index: 10;
+            animation: bounce 0.8s infinite alternate;
+        }
+
+        @keyframes bounce {
+            from { transform: translateY(0); }
+            to { transform: translateY(-4px); }
+        }
+
+        .building-icon { font-size: 2.3rem; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.3)); }
+        .building-name { font-size: 0.8rem; font-weight: 800; color: #ffffff; margin-top: 0.2rem; }
+        .building-desc { font-size: 0.65rem; color: #94a3b8; }
+
+        .navigation-panel {
+            background: #173d4d;
+            border-radius: 12px;
+            padding: 0.85rem;
+            border: 1px solid #24586d;
+            display: flex;
+            flex-direction: column;
+            gap: 0.65rem;
+        }
+
+        .panel-title {
+            font-size: 0.85rem;
+            font-weight: 800;
+            color: #38bdf8;
+            text-transform: uppercase;
+        }
+
+        .target-box {
+            background: #0b1f28;
+            padding: 0.6rem 0.75rem;
+            border-radius: 8px;
+            border: 1px solid #24586d;
+            font-size: 0.82rem;
+            line-height: 1.35;
+        }
+
+        .nav-controls-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.4rem;
+        }
+
+        .dir-action-btn {
+            background: #0b1f28;
+            border: 1px solid #24586d;
+            color: #f8fafc;
+            padding: 0.55rem;
+            border-radius: 8px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.3rem;
+            transition: all 0.2s;
+        }
+
+        .dir-action-btn:hover {
+            background: #0284c7;
+            border-color: #0284c7;
+        }
+
+        /* MODE 2: DIRECTION PUZZLE */
+        .sim-area-puzzle {
+            display: none;
+            background: #173d4d;
+            border-radius: 12px;
+            padding: 1rem;
+            border: 1px solid #24586d;
+            flex-direction: column;
+            gap: 0.85rem;
+        }
+
+        .puzzle-q-card {
+            background: #0b1f28;
+            border-radius: 10px;
+            padding: 0.85rem;
+            border: 1px solid #24586d;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .tourist-avatar {
+            width: 55px;
+            height: 55px;
+            background: linear-gradient(135deg, #f59e0b, #e11d48);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            flex-shrink: 0;
+        }
+
+        .puzzle-prompt {
+            font-size: 0.9rem;
+            color: #f8fafc;
+            line-height: 1.4;
+        }
+
+        .puzzle-options-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.65rem;
+        }
+
+        .puzzle-opt-btn {
+            background: #0b1f28;
+            border: 2px solid #24586d;
+            border-radius: 10px;
+            padding: 0.75rem;
+            color: #f8fafc;
+            font-size: 0.85rem;
+            font-weight: 700;
+            text-align: left;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .puzzle-opt-btn:hover {
+            border-color: #f59e0b;
+            background: #173d4d;
+        }
+
+        .sim-feedback-box {
+            background: rgba(11, 31, 40, 0.9);
+            border: 2px solid #38bdf8;
+            padding: 0.65rem 1rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            color: #e2e8f0;
+            text-align: center;
+            line-height: 1.4;
+        }
+
+        .sim-controls {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.5rem;
+        }
+
+        .reset-btn {
+            background: #ef4444;
+            color: white;
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .reset-btn:hover { background: #dc2626; }
+
+        /* --- TAB 4: LKPD --- */
+        .lkpd-container {
+            max-width: 920px;
+            margin: 0 auto;
+            background: #173d4d;
+            border-radius: 12px;
+            padding: 1.2rem;
+            border: 1px solid #24586d;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .lkpd-header {
+            border-bottom: 2px dashed #24586d;
+            padding-bottom: 0.75rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .lkpd-inputs {
+            display: flex;
+            gap: 0.75rem;
+        }
+
+        .lkpd-field {
+            background: #0b1f28;
+            border: 1px solid #24586d;
+            color: white;
+            padding: 0.45rem 0.8rem;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            flex: 1;
+        }
+
+        .lkpd-q-box {
+            background: #0b1f28;
+            padding: 0.85rem;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 0.45rem;
+            border: 1px solid #24586d;
+            transition: border-color 0.2s;
+        }
+
+        .lkpd-q-box.correct { border-color: #10b981; background: rgba(16, 185, 129, 0.05); }
+        .lkpd-q-box.incorrect { border-color: #ef4444; background: rgba(239, 68, 68, 0.05); }
+
+        .lkpd-q-title {
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: #38bdf8;
+            line-height: 1.35;
+        }
+
+        .lkpd-options {
+            display: flex;
+            gap: 1rem;
+            font-size: 0.82rem;
+            margin-top: 0.2rem;
+            flex-wrap: wrap;
+        }
+
+        .lkpd-options label {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            cursor: pointer;
+        }
+
+        .lkpd-text-input {
+            background: #173d4d;
+            border: 1px solid #24586d;
+            color: #f59e0b;
+            padding: 0.4rem 0.65rem;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 0.85rem;
+            width: 220px;
+        }
+
+        .lkpd-explanation {
+            font-size: 0.78rem;
+            margin-top: 0.3rem;
+            padding: 0.45rem 0.65rem;
+            border-radius: 6px;
+            display: none;
+            line-height: 1.35;
+        }
+
+        .lkpd-explanation.show-correct {
+            display: block;
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+        }
+
+        .lkpd-explanation.show-incorrect {
+            display: block;
+            background: rgba(239, 68, 68, 0.15);
+            color: #fca5a5;
+        }
+
+        .grade-badge {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: #10b981;
+            background: rgba(16, 185, 129, 0.15);
+            padding: 0.35rem 0.9rem;
+            border-radius: 6px;
+            display: none;
+        }
+
+        /* --- TAB 5: PENGEMBANG --- */
+        .dev-card {
+            max-width: 780px;
+            margin: 0 auto;
+            background: #173d4d;
+            border-radius: 14px;
+            padding: 1.5rem;
+            border: 1px solid #24586d;
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+        }
+
+        .dev-avatar {
+            width: 110px;
+            height: 110px;
+            background: linear-gradient(135deg, #0284c7, #0d9488);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3.2rem;
+            flex-shrink: 0;
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
+        }
+
+        .dev-details h3 {
+            font-size: 1.3rem;
+            color: #38bdf8;
+            margin-bottom: 0.2rem;
+        }
+
+        .dev-details p {
+            font-size: 0.85rem;
+            color: #cbd5e1;
+            line-height: 1.4;
+        }
+
+        .cp-box {
+            margin-top: 0.75rem;
+            background: #0b1f28;
+            padding: 0.75rem;
+            border-radius: 8px;
+            font-size: 0.78rem;
+            color: #94a3b8;
+            border-left: 4px solid #0284c7;
+            line-height: 1.4;
+        }
+
+        /* --- TOAST NOTIFICATION --- */
+        #toast {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: #10b981;
+            color: white;
+            padding: 0.65rem 1.2rem;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.4);
+            display: none;
+            z-index: 50;
+            animation: fadeIn 0.3s forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+    <div id="app-scaler">
+        <!-- MAIN 16:9 VIEWPORT CONTAINER -->
+        <div id="app-viewport">
+            
+            <!-- SPLASH SCREEN -->
+            <div id="splash-screen">
+                <div class="splash-badge">VIRTUAL LAB BAHASA INGGRIS SD - FASE C</div>
+                <h1 class="splash-title">Virtual City Explorer 🏙️</h1>
+                <p class="splash-subtitle">Visiting Places & Giving Directions in English!</p>
+                
+                <div class="progress-box" id="progress-box">
+                    <div class="progress-bar" id="progress-bar"></div>
+                </div>
+
+                <button class="splash-btn" id="start-btn">🧭 Start Explorer</button>
+            </div>
+
+            <!-- HEADER & NAVIGATION -->
+            <header>
+                <div class="app-brand">
+                    <div class="app-brand-icon">🗺️</div>
+                    <div>
+                        <div class="app-title-text">City Explorer Lab</div>
+                        <div class="app-sub-text">Grade 5 SD • Places & Directions</div>
+                    </div>
+                </div>
+
+                <nav>
+                    <button class="nav-btn active" data-tab="teori">📚 Teori</button>
+                    <button class="nav-btn" data-tab="prosedur">📋 Prosedur</button>
+                    <button class="nav-btn" data-tab="simulasi">🎮 Simulasi</button>
+                    <button class="nav-btn" data-tab="lkpd">📝 LKPD</button>
+                    <button class="nav-btn" data-tab="pengembang">👤 Pengembang</button>
+                </nav>
+
+                <div class="header-actions">
+                    <button class="icon-btn" id="sound-toggle" title="Toggle Efek Suara">🔊</button>
+                </div>
+            </header>
+
+            <!-- MAIN CONTENT AREA -->
+            <main>
+
+                <!-- TAB 1: TEORI -->
+                <div class="tab-content active" id="tab-teori">
+                    <div class="teori-subnav">
+                        <button class="subtab-btn active" id="subtab-places-btn">🏫 Public Places</button>
+                        <button class="subtab-btn" id="subtab-directions-btn">🧭 Giving Directions</button>
+                    </div>
+
+                    <!-- SUBTAB 1: PUBLIC PLACES -->
+                    <div id="subtab-places-content">
+                        <div class="teori-section-title">🏙️ Vocabulary Public Places (Klik kartu untuk pengucapan!)</div>
+                        <div class="vocab-grid">
+                            <div class="vocab-card" onclick="speakWord('Hospital')">
+                                <div class="vocab-icon">🏥</div>
+                                <h4>Hospital</h4>
+                                <p>Rumah Sakit</p>
+                                <div class="audio-pill">🔊 Pronounce</div>
+                            </div>
+                            <div class="vocab-card" onclick="speakWord('School')">
+                                <div class="vocab-icon">🏫</div>
+                                <h4>School</h4>
+                                <p>Sekolah</p>
+                                <div class="audio-pill">🔊 Pronounce</div>
+                            </div>
+                            <div class="vocab-card" onclick="speakWord('Park')">
+                                <div class="vocab-icon">🏞️</div>
+                                <h4>Park</h4>
+                                <p>Taman Kota</p>
+                                <div class="audio-pill">🔊 Pronounce</div>
+                            </div>
+                            <div class="vocab-card" onclick="speakWord('Bank')">
+                                <div class="vocab-icon">🏦</div>
+                                <h4>Bank</h4>
+                                <p>Bank</p>
+                                <div class="audio-pill">🔊 Pronounce</div>
+                            </div>
+                            <div class="vocab-card" onclick="speakWord('Library')">
+                                <div class="vocab-icon">📚</div>
+                                <h4>Library</h4>
+                                <p>Perpustakaan</p>
+                                <div class="audio-pill">🔊 Pronounce</div>
+                            </div>
+                            <div class="vocab-card" onclick="speakWord('Supermarket')">
+                                <div class="vocab-icon">🛒</div>
+                                <h4>Supermarket</h4>
+                                <p>Supermarket</p>
+                                <div class="audio-pill">🔊 Pronounce</div>
+                            </div>
+                            <div class="vocab-card" onclick="speakWord('Bakery')">
+                                <div class="vocab-icon">🍞</div>
+                                <h4>Bakery</h4>
+                                <p>Toko Roti</p>
+                                <div class="audio-pill">🔊 Pronounce</div>
+                            </div>
+                            <div class="vocab-card" onclick="speakWord('Bus Stop')">
+                                <div class="vocab-icon">🚏</div>
+                                <h4>Bus Stop</h4>
+                                <p>Halte Bus</p>
+                                <div class="audio-pill">🔊 Pronounce</div>
+                            </div>
+                            <div class="vocab-card" onclick="speakWord('Museum')">
+                                <div class="vocab-icon">🏛️</div>
+                                <h4>Museum</h4>
+                                <p>Museum</p>
+                                <div class="audio-pill">🔊 Pronounce</div>
+                            </div>
+                            <div class="vocab-card" onclick="speakWord('Restaurant')">
+                                <div class="vocab-icon">🍽️</div>
+                                <h4>Restaurant</h4>
+                                <p>Restoran</p>
+                                <div class="audio-pill">🔊 Pronounce</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- SUBTAB 2: GIVING DIRECTIONS -->
+                    <div id="subtab-directions-content" style="display: none;">
+                        <div class="teori-section-title">🧭 Expression & Direction Phrases (Klik untuk mendengar!)</div>
+                        <div class="direction-cards-grid">
+                            <div class="direction-card" onclick="speakWord('Go straight ahead')">
+                                <div class="dir-icon-box">⬆️</div>
+                                <div class="dir-info">
+                                    <h4>Go straight</h4>
+                                    <p>Jalan lurus terus</p>
+                                </div>
+                            </div>
+                            <div class="direction-card" onclick="speakWord('Turn left')">
+                                <div class="dir-icon-box">⬅️</div>
+                                <div class="dir-info">
+                                    <h4>Turn left</h4>
+                                    <p>Belok kiri</p>
+                                </div>
+                            </div>
+                            <div class="direction-card" onclick="speakWord('Turn right')">
+                                <div class="dir-icon-box">➡️</div>
+                                <div class="dir-info">
+                                    <h4>Turn right</h4>
+                                    <p>Belok kanan</p>
+                                </div>
+                            </div>
+                            <div class="direction-card" onclick="speakWord('Cross the street')">
+                                <div class="dir-icon-box">🚶‍♂️</div>
+                                <div class="dir-info">
+                                    <h4>Cross the street</h4>
+                                    <p>Menyeberang jalan</p>
+                                </div>
+                            </div>
+                            <div class="direction-card" onclick="speakWord('Next to')">
+                                <div class="dir-icon-box">🏢🏢</div>
+                                <div class="dir-info">
+                                    <h4>Next to</h4>
+                                    <p>Di sebelah / samping</p>
+                                </div>
+                            </div>
+                            <div class="direction-card" onclick="speakWord('Opposite')">
+                                <div class="dir-icon-box">↔️</div>
+                                <div class="dir-info">
+                                    <h4>Opposite</h4>
+                                    <p>Berseberangan / Di seberang</p>
+                                </div>
+                            </div>
+                            <div class="direction-card" onclick="speakWord('Between')">
+                                <div class="dir-icon-box">🏢🏬🏢</div>
+                                <div class="dir-info">
+                                    <h4>Between</h4>
+                                    <p>Di antara dua tempat</p>
+                                </div>
+                            </div>
+                            <div class="direction-card" onclick="speakWord('On the corner of')">
+                                <div class="dir-icon-box">📐</div>
+                                <div class="dir-info">
+                                    <h4>On the corner</h4>
+                                    <p>Di sudut / tikungan jalan</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 2: PROSEDUR -->
+                <div class="tab-content" id="tab-prosedur">
+                    <div class="procedure-container">
+                        <div class="teori-section-title">📌 Langkah-Langkah Menggunakan Lab Maya</div>
+                        
+                        <div class="step-card">
+                            <div class="step-num">1</div>
+                            <div class="step-info">
+                                <h4>Pelajari Kosakata & Pengucapan (Pronunciation)</h4>
+                                <p>Buka tab <strong>Teori</strong>, klik setiap kartu *Public Places* dan *Giving Directions* untuk mendengarkan pelafalan Bahasa Inggris yang benar.</p>
+                            </div>
+                        </div>
+
+                        <div class="step-card">
+                            <div class="step-num">2</div>
+                            <div class="step-info">
+                                <h4>Eksplorasi Simulasi Peta Kota (Mode 1 & 2)</h4>
+                                <p>Di tab <strong>Simulasi</strong>, pilih tempat tujuan pada peta kota interaktif, ikuti instruksi navigasi (Mode 1), dan selesaikan tantangan teka-teki arah turis (Mode 2).</p>
+                            </div>
+                        </div>
+
+                        <div class="step-card">
+                            <div class="step-num">3</div>
+                            <div class="step-info">
+                                <h4>Selesaikan 10 Soal Evaluasi Digital pada LKPD</h4>
+                                <p>Buka tab <strong>LKPD</strong>, isi nama dan kelas, lalu kerjakan 10 variasi soal pilihan ganda, isian singkat, dan analisis denah lokasi.</p>
+                            </div>
+                        </div>
+
+                        <div class="step-card">
+                            <div class="step-num">4</div>
+                            <div class="step-info">
+                                <h4>Periksa Hasil Nilai & Penjelasan Instan</h4>
+                                <p>Tekan tombol <strong>Kirim & Periksa Nilai</strong> untuk melihat skor akhir (0-100) serta penjelasan detail pada setiap soal.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 3: SIMULASI -->
+                <div class="tab-content" id="tab-simulasi">
+                    <div class="sim-container">
+                        <div class="sim-header-bar">
+                            <div class="sim-mode-toggle">
+                                <button class="mode-btn active" id="btn-mode-map">Mode 1: Visual City Map</button>
+                                <button class="mode-btn" id="btn-mode-puzzle">Mode 2: Tourist Challenge</button>
+                            </div>
+                            <div class="sim-score-box">Skor: <span id="sim-score">0</span></div>
+                            <button class="reset-btn" id="sim-reset-btn">🔄 Reset Peta</button>
+                        </div>
+
+                        <!-- MODE 1: MAP EXPLORER (VISUAL KID-FRIENDLY MAP) -->
+                        <div class="sim-area-map" id="mode-map-area">
+                            <div class="map-visual-board" id="city-map-grid">
+                                <div class="map-road-h"></div>
+                                <div class="map-road-v"></div>
+                                <div class="street-sign-1">📍 MERDEKA STREET</div>
+                                <div class="street-sign-2">📍 PANCASILA STREET</div>
+                                <!-- Dynamic 9 Map Buildings -->
+                            </div>
+
+                            <div class="navigation-panel">
+                                <div class="panel-title">🧭 Navigation Control</div>
+                                <div class="target-box" id="nav-target-info">
+                                    Klik salah satu gedung pada peta kota untuk memilih tujuan penjelajahan! 🚌
+                                </div>
+
+                                <div class="nav-controls-grid">
+                                    <button class="dir-action-btn" onclick="movePlayer('straight')">⬆️ Go Straight</button>
+                                    <button class="dir-action-btn" onclick="movePlayer('left')">⬅️ Turn Left</button>
+                                    <button class="dir-action-btn" onclick="movePlayer('right')">➡️ Turn Right</button>
+                                    <button class="dir-action-btn" onclick="movePlayer('cross')">🚶‍♂️ Cross Street</button>
+                                </div>
+
+                                <div class="sim-feedback-box" id="map-feedback" style="margin-top: auto; font-size: 0.8rem;">
+                                    💡 Klik tujuan pada peta, lalu gunakan tombol navigasi untuk membawa Bus Sekolah 🚌 ke sana!
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- MODE 2: DIRECTION PUZZLE -->
+                        <div class="sim-area-puzzle" id="mode-puzzle-area">
+                            <div class="puzzle-q-card">
+                                <div class="tourist-avatar">🧳</div>
+                                <div class="puzzle-prompt" id="puzzle-question-text">
+                                    Loading challenge...
+                                </div>
+                            </div>
+
+                            <div class="puzzle-options-grid" id="puzzle-options-container">
+                                <!-- Dynamic option buttons -->
+                            </div>
+
+                            <div class="sim-feedback-box" id="puzzle-feedback">
+                                💡 Pilih urutan petunjuk arah yang tepat untuk membantu wisatawan sampai di lokasi tujuan.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 4: LKPD -->
+                <div class="tab-content" id="tab-lkpd">
+                    <div class="lkpd-container">
+                        <div class="lkpd-header">
+                            <div>
+                                <h3 style="color: #38bdf8;">Digital LKPD: Visiting Places & Directions</h3>
+                                <p style="font-size: 0.8rem; color: #94a3b8;">Lembar Kerja Peserta Didik (10 Variasi Soal Bahasa Inggris Kelas 5 SD)</p>
+                            </div>
+                            <div class="grade-badge" id="grade-badge">Nilai: 0 / 100</div>
+                        </div>
+
+                        <div class="lkpd-inputs">
+                            <input type="text" id="student-name" class="lkpd-field" placeholder="Nama Siswa..." />
+                            <input type="text" id="student-class" class="lkpd-field" placeholder="Kelas..." />
+                        </div>
+
+                        <!-- Q1 -->
+                        <div class="lkpd-q-box" id="box-q1">
+                            <div class="lkpd-q-title">1. Where do people go when they want to borrow books? 📚</div>
+                            <div class="lkpd-options">
+                                <label><input type="radio" name="q1" value="Library"> Library</label>
+                                <label><input type="radio" name="q1" value="Bakery"> Bakery</label>
+                                <label><input type="radio" name="q1" value="Hospital"> Hospital</label>
+                            </div>
+                            <div class="lkpd-explanation" id="exp-q1"></div>
+                        </div>
+
+                        <!-- Q2 -->
+                        <div class="lkpd-q-title-box lkpd-q-box" id="box-q2">
+                            <div class="lkpd-q-title">2. What sign means you should change direction to the left? ⬅️</div>
+                            <div class="lkpd-options">
+                                <label><input type="radio" name="q2" value="Turn left"> Turn left</label>
+                                <label><input type="radio" name="q2" value="Turn right"> Turn right</label>
+                                <label><input type="radio" name="q2" value="Go straight"> Go straight</label>
+                            </div>
+                            <div class="lkpd-explanation" id="exp-q2"></div>
+                        </div>
+
+                        <!-- Q3 -->
+                        <div class="lkpd-q-box" id="box-q3">
+                            <div class="lkpd-q-title">3. The school is _______ the park and the bank. (Letaknya di tengah-tengah dua tempat). 🏫🏞️🏦</div>
+                            <div class="lkpd-options">
+                                <label><input type="radio" name="q3" value="between"> between</label>
+                                <label><input type="radio" name="q3" value="under"> under</label>
+                                <label><input type="radio" name="q3" value="behind"> behind</label>
+                            </div>
+                            <div class="lkpd-explanation" id="exp-q3"></div>
+                        </div>
+
+                        <!-- Q4 -->
+                        <div class="lkpd-q-box" id="box-q4">
+                            <div class="lkpd-q-title">4. Ketik nama tempat Bahasa Inggris:<br><em>"A place where doctors and nurses help sick people is a _______."</em> 🏥</div>
+                            <div style="margin-top: 0.3rem;">
+                                <input type="text" id="ans-q4" class="lkpd-text-input" placeholder="Jawaban (hospital)..." />
+                            </div>
+                            <div class="lkpd-explanation" id="exp-q4"></div>
+                        </div>
+
+                        <!-- Q5 -->
+                        <div class="lkpd-q-box" id="box-q5">
+                            <div class="lkpd-q-title">5. Ketik frasa arah Bahasa Inggris untuk "Jalan lurus terus":<br><em>"_______ ahead to reach the city park."</em> ⬆️</div>
+                            <div style="margin-top: 0.3rem;">
+                                <input type="text" id="ans-q5" class="lkpd-text-input" placeholder="Jawaban (Go straight)..." />
+                            </div>
+                            <div class="lkpd-explanation" id="exp-q5"></div>
+                        </div>
+
+                        <!-- Q6 -->
+                        <div class="lkpd-q-box" id="box-q6">
+                            <div class="lkpd-q-title">6. We want to buy delicious fresh bread and cakes. Where should we go? 🍞🍰</div>
+                            <div class="lkpd-options">
+                                <label><input type="radio" name="q6" value="Bakery"> Bakery</label>
+                                <label><input type="radio" name="q6" value="Bus Stop"> Bus Stop</label>
+                                <label><input type="radio" name="q6" value="Museum"> Museum</label>
+                            </div>
+                            <div class="lkpd-explanation" id="exp-q6"></div>
+                        </div>
+
+                        <!-- Q7 -->
+                        <div class="lkpd-q-box" id="box-q7">
+                            <div class="lkpd-q-title">7. True or False: "Opposite" means two places are on the same side of the street without crossing. ↔️</div>
+                            <div class="lkpd-options">
+                                <label><input type="radio" name="q7" value="False"> False (Salah)</label>
+                                <label><input type="radio" name="q7" value="True"> True (Benar)</label>
+                            </div>
+                            <div class="lkpd-explanation" id="exp-q7"></div>
+                        </div>
+
+                        <!-- Q8 -->
+                        <div class="lkpd-q-box" id="box-q8">
+                            <div class="lkpd-q-title">8. A student waits for public transport at the _______. 🚏🚌</div>
+                            <div class="lkpd-options">
+                                <label><input type="radio" name="q8" value="Bus stop"> Bus stop</label>
+                                <label><input type="radio" name="q8" value="Supermarket"> Supermarket</label>
+                                <label><input type="radio" name="q8" value="Restaurant"> Restaurant</label>
+                            </div>
+                            <div class="lkpd-explanation" id="exp-q8"></div>
+                        </div>
+
+                        <!-- Q9 -->
+                        <div class="lkpd-q-box" id="box-q9">
+                            <div class="lkpd-q-title">9. How do you ask for directions to the supermarket politely? ❓</div>
+                            <div class="lkpd-options">
+                                <label><input type="radio" name="q9" value="Excuse me, how can I get to the supermarket?"> Excuse me, how can I get to the supermarket?</label>
+                                <label><input type="radio" name="q9" value="I don't like the supermarket."> I don't like the supermarket.</label>
+                                <label><input type="radio" name="q9" value="The supermarket is big."> The supermarket is big.</label>
+                            </div>
+                            <div class="lkpd-explanation" id="exp-q9"></div>
+                        </div>
+
+                        <!-- Q10 -->
+                        <div class="lkpd-q-box" id="box-q10">
+                            <div class="lkpd-q-title">10. "The bakery is NEXT TO the supermarket." What does this mean? 🍞🛒</div>
+                            <div class="lkpd-options">
+                                <label><input type="radio" name="q10" value="The bakery is beside the supermarket"> The bakery is beside the supermarket</label>
+                                <label><input type="radio" name="q10" value="The bakery is behind the supermarket"> The bakery is behind the supermarket</label>
+                                <label><input type="radio" name="q10" value="The bakery is far away"> The bakery is far away</label>
+                            </div>
+                            <div class="lkpd-explanation" id="exp-q10"></div>
+                        </div>
+
+                        <div class="sim-controls">
+                            <button class="reset-btn" id="reset-lkpd-btn">🔄 Reset LKPD</button>
+                            <button class="btn-primary" id="submit-lkpd-btn" style="background: #10b981; color: white; border: none; padding: 0.6rem 1.4rem; border-radius: 8px; font-weight: bold; cursor: pointer;">💾 Kirim & Periksa Nilai</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- TAB 5: PENGEMBANG -->
+                <div class="tab-content" id="tab-pengembang">
+                    <div class="dev-card">
+                        <div class="dev-avatar">🗺️</div>
+                        <div class="dev-details">
+                            <h3>Pengembang Lab Maya Bahasa Inggris</h3>
+                            <p><strong>Mata Pelajaran:</strong> Bahasa Inggris (Elementary School)</p>
+                            <p><strong>Materi:</strong> Visiting Places, Vocabulary Public Places & Giving Directions</p>
+                            <p><strong>Fase/Kelas:</strong> Fase C / Kelas 5 SD</p>
+                            <div class="cp-box">
+                                <strong>Capaian Pembelajaran (CP):</strong> Peserta didik mampu mengidentifikasi dan menyebutkan berbagai tempat umum (*public places*), memberikan serta merespons instruksi petunjuk arah (*giving directions*), dan mengaplikasikan frasa preposisi lokasi (*prepositions of place*) dalam konteks denah kota secara tepat dan komunikatif.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION -->
+    <div id="toast">Message</div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        /* --- RESPONSIVE 16:9 VIEWPORT SCALER --- */
+        function autoScaleViewport() {
+            const scaler = document.getElementById('app-scaler');
+            const viewport = document.getElementById('app-viewport');
+            const windowWidth = window.innerWidth;
+            const windowHeight = window.innerHeight;
+            
+            const targetWidth = 1280;
+            const targetHeight = 720;
+
+            const scaleX = windowWidth / targetWidth;
+            const scaleY = windowHeight / targetHeight;
+            const scale = Math.min(scaleX, scaleY);
+
+            viewport.style.transform = `scale(${scale})`;
+        }
+
+        window.addEventListener('resize', autoScaleViewport);
+        window.addEventListener('load', autoScaleViewport);
+
+        /* --- OFFLINE WEB AUDIO SYNTHESIZER --- */
+        class SoundEngine {
+            constructor() {
+                this.ctx = null;
+                this.enabled = true;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            }
+
+            playClick() {
+                if (!this.enabled) return;
+                this.init();
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(580, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(300, this.ctx.currentTime + 0.05);
+                gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.05);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.05);
+            }
+
+            playSuccess() {
+                if (!this.enabled) return;
+                this.init();
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(523.25, now);
+                osc.frequency.setValueAtTime(659.25, now + 0.08);
+                osc.frequency.setValueAtTime(783.99, now + 0.16);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.3);
+            }
+
+            playError() {
+                if (!this.enabled) return;
+                this.init();
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(220, now);
+                osc.frequency.linearRampToValueAtTime(110, now + 0.15);
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(now);
+                osc.stop(now + 0.15);
+            }
+        }
+
+        const sound = new SoundEngine();
+
+        /* --- WEB SPEECH API PRONUNCIATION --- */
+        function speakWord(text) {
+            sound.playClick();
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'en-US';
+                utterance.rate = 0.9;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        /* --- SPLASH SCREEN LOGIC --- */
+        window.addEventListener('load', () => {
+            const progressBar = document.getElementById('progress-bar');
+            const startBtn = document.getElementById('start-btn');
+            const progressBox = document.getElementById('progress-box');
+
+            let progress = 0;
+            const timer = setInterval(() => {
+                progress += 25;
+                if (progress > 100) progress = 100;
+                progressBar.style.width = progress + '%';
+
+                if (progress === 100) {
+                    clearInterval(timer);
+                    setTimeout(() => {
+                        progressBox.style.display = 'none';
+                        startBtn.style.display = 'inline-block';
+                    }, 300);
+                }
+            }, 100);
+        });
+
+        document.getElementById('start-btn').addEventListener('click', () => {
+            sound.playSuccess();
+            const splash = document.getElementById('splash-screen');
+            splash.style.opacity = '0';
+            setTimeout(() => { splash.style.visibility = 'hidden'; }, 500);
+        });
+
+        // Sound Toggle Button
+        const soundBtn = document.getElementById('sound-toggle');
+        soundBtn.addEventListener('click', () => {
+            sound.enabled = !sound.enabled;
+            soundBtn.textContent = sound.enabled ? '🔊' : '🔇';
+            showToast(sound.enabled ? 'Suara Aktif' : 'Suara Diheningkan');
+        });
+
+        /* --- NAVIGATION TABS --- */
+        const navButtons = document.querySelectorAll('.nav-btn');
+        const tabContents = document.querySelectorAll('.tab-content');
+
+        navButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                sound.playClick();
+                const targetTab = btn.getAttribute('data-tab');
+
+                navButtons.forEach(b => b.classList.remove('active'));
+                tabContents.forEach(c => c.classList.remove('active'));
+
+                btn.classList.add('active');
+                document.getElementById(`tab-${targetTab}`).classList.add('active');
+            });
+        });
+
+        // SUBTABS IN TEORI
+        const subtabPlacesBtn = document.getElementById('subtab-places-btn');
+        const subtabDirectionsBtn = document.getElementById('subtab-directions-btn');
+        const placesContent = document.getElementById('subtab-places-content');
+        const directionsContent = document.getElementById('subtab-directions-content');
+
+        subtabPlacesBtn.addEventListener('click', () => {
+            sound.playClick();
+            subtabPlacesBtn.classList.add('active');
+            subtabDirectionsBtn.classList.remove('active');
+            placesContent.style.display = 'block';
+            directionsContent.style.display = 'none';
+        });
+
+        subtabDirectionsBtn.addEventListener('click', () => {
+            sound.playClick();
+            subtabDirectionsBtn.classList.add('active');
+            subtabPlacesBtn.classList.remove('active');
+            directionsContent.style.display = 'block';
+            placesContent.style.display = 'none';
+        });
+
+        /* --- SIMULATION LOGIC --- */
+        let simScore = 0;
+        let playerPos = 0; // index 0..8
+        let targetPos = null;
+
+        // 9 Visual City Grid Buildings
+        const cityLocations = [
+            { id: 0, name: 'Hospital', icon: '🏥', desc: 'Jl. Merdeka' },
+            { id: 1, name: 'School', icon: '🏫', desc: 'Jl. Merdeka' },
+            { id: 2, name: 'City Park', icon: '🏞️', desc: 'Jl. Merdeka' },
+            { id: 3, name: 'Bank', icon: '🏦', desc: 'Jl. Pancasila' },
+            { id: 4, name: 'Library', icon: '📚', desc: 'Center City' },
+            { id: 5, name: 'Supermarket', icon: '🛒', desc: 'Jl. Pancasila' },
+            { id: 6, name: 'Bakery', icon: '🍞', desc: 'Jl. Pancasila' },
+            { id: 7, name: 'Bus Stop', icon: '🚏', desc: 'Jl. Pancasila' },
+            { id: 8, name: 'Museum', icon: '🏛️', desc: 'Jl. Pancasila' }
+        ];
+
+        function renderCityMap() {
+            const grid = document.getElementById('city-map-grid');
+            
+            // Keep roads and street signs, remove existing building cards
+            const existingCards = grid.querySelectorAll('.map-building-card');
+            existingCards.forEach(card => card.remove());
+
+            cityLocations.forEach((loc, idx) => {
+                const card = document.createElement('div');
+                card.className = 'map-building-card';
+                if (idx === targetPos) card.classList.add('active-target');
+                if (idx === playerPos) card.classList.add('player-avatar-box');
+
+                card.innerHTML = `
+                    <div class="building-icon">${loc.icon}</div>
+                    <div class="building-name">${loc.name}</div>
+                    <div class="building-desc">${loc.desc}</div>
+                `;
+
+                card.addEventListener('click', () => {
+                    sound.playClick();
+                    targetPos = idx;
+                    document.getElementById('nav-target-info').innerHTML = `
+                        🎯 Target Goal: <strong>${loc.name} ${loc.icon}</strong><br>
+                        <em>Tekan tombol navigasi untuk menuju ke lokasi ini!</em>
+                    `;
+                    speakWord(`Target destination: ${loc.name}`);
+                    renderCityMap();
+                });
+
+                grid.appendChild(card);
+            });
+        }
+
+        function movePlayer(direction) {
+            sound.playClick();
+            if (targetPos === null) {
+                showToast('⚠️ Klik salah satu tempat tujuan pada peta terlebih dahulu!');
+                return;
+            }
+
+            let newPos = playerPos;
+            if (direction === 'straight') newPos = Math.min(playerPos + 3, 8);
+            if (direction === 'left') newPos = Math.max(playerPos - 1, 0);
+            if (direction === 'right') newPos = Math.min(playerPos + 1, 8);
+            if (direction === 'cross') newPos = (playerPos + 4) % 9;
+
+            playerPos = newPos;
+            renderCityMap();
+
+            if (playerPos === targetPos) {
+                sound.playSuccess();
+                simScore += 20;
+                document.getElementById('sim-score').textContent = simScore;
+                document.getElementById('map-feedback').innerHTML = `🎉 <strong>Awesome Explorer!</strong> Bus telah sampai di <strong>${cityLocations[targetPos].name} ${cityLocations[targetPos].icon}</strong>!`;
+                showToast(`🎉 Sampai di ${cityLocations[targetPos].name}! (+20 Skor)`);
+                speakWord(`Great job! You reached the ${cityLocations[targetPos].name}`);
+                targetPos = null;
+            } else {
+                document.getElementById('map-feedback').innerHTML = `🚌 Bus bergerak menuju <strong>${cityLocations[playerPos].name}</strong>. Teruskan petunjuk arah!`;
+            }
+        }
+
+        // MODE 2: TOURIST DIRECTION CHALLENGE DATA
+        const puzzleQuestions = [
+            {
+                prompt: "Tourist: <em>'Excuse me, how do I get from the Hospital 🏥 to the School 🏫?'</em>",
+                options: [
+                    { text: "Go straight and turn right next to the park", correct: true, exp: "Benar! Dari rumah sakit, jalan lurus dan belok kanan menuju sekolah." },
+                    { text: "Cross the ocean and turn left", correct: false, exp: "Salah! Tempat ini berada di dalam area kota." }
+                ]
+            },
+            {
+                prompt: "Tourist: <em>'Where is the Bakery 🍞 located?'</em>",
+                options: [
+                    { text: "It is NEXT TO the Supermarket 🛒", correct: true, exp: "Tepat sekali! Toko roti berada tepat di sebelah supermarket." },
+                    { text: "It is under the water", correct: false, exp: "Salah!" }
+                ]
+            },
+            {
+                prompt: "Tourist: <em>'I am at the Bus Stop 🚏. Where is the Library 📚?'</em>",
+                options: [
+                    { text: "Go straight and cross the street", correct: true, exp: "Benar! Perpustakaan dapat dicapai dengan jalan lurus dan menyeberang." },
+                    { text: "Turn left twice into a river", correct: false, exp: "Salah!" }
+                ]
+            }
+        ];
+
+        let currentPuzzleIdx = 0;
+
+        function renderPuzzleChallenge() {
+            const q = puzzleQuestions[currentPuzzleIdx];
+            document.getElementById('puzzle-question-text').innerHTML = q.prompt;
+
+            const container = document.getElementById('puzzle-options-container');
+            container.innerHTML = '';
+
+            q.options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'puzzle-opt-btn';
+                btn.innerHTML = opt.text;
+
+                btn.addEventListener('click', () => {
+                    if (opt.correct) {
+                        sound.playSuccess();
+                        simScore += 25;
+                        document.getElementById('sim-score').textContent = simScore;
+                        document.getElementById('puzzle-feedback').innerHTML = `✅ <strong>Correct!</strong> ${opt.exp}`;
+                        showToast('✅ Correct Direction! (+25 Score)');
+                        currentPuzzleIdx = (currentPuzzleIdx + 1) % puzzleQuestions.length;
+                        setTimeout(renderPuzzleChallenge, 1800);
+                    } else {
+                        sound.playError();
+                        document.getElementById('puzzle-feedback').innerHTML = `❌ <strong>Try Again!</strong> ${opt.exp}`;
+                        showToast('❌ Periksa kembali petunjuk arah!');
+                    }
+                });
+
+                container.appendChild(btn);
+            });
+        }
+
+        // SIMULATION MODE SWITCHING
+        document.getElementById('btn-mode-map').addEventListener('click', () => {
+            sound.playClick();
+            document.getElementById('btn-mode-map').classList.add('active');
+            document.getElementById('btn-mode-puzzle').classList.remove('active');
+            document.getElementById('mode-map-area').style.display = 'grid';
+            document.getElementById('mode-puzzle-area').style.display = 'none';
+        });
+
+        document.getElementById('btn-mode-puzzle').addEventListener('click', () => {
+            sound.playClick();
+            document.getElementById('btn-mode-puzzle').classList.add('active');
+            document.getElementById('btn-mode-map').classList.remove('active');
+            document.getElementById('mode-map-area').style.display = 'none';
+            document.getElementById('mode-puzzle-area').style.display = 'flex';
+            renderPuzzleChallenge();
+        });
+
+        document.getElementById('sim-reset-btn').addEventListener('click', () => {
+            sound.playClick();
+            simScore = 0;
+            playerPos = 0;
+            targetPos = null;
+            document.getElementById('sim-score').textContent = simScore;
+            document.getElementById('nav-target-info').textContent = 'Klik tempat di peta untuk memulai penjelajahan!';
+            renderCityMap();
+            showToast('Peta Simulasi Di-reset');
+        });
+
+        renderCityMap();
+
+        /* --- LKPD EVALUATION LOGIC (10 QUESTIONS) --- */
+        const lkpdAnswers = {
+            q1: { ans: 'Library', exp: 'Library (Perpustakaan) adalah tempat untuk meminjam dan membaca buku.' },
+            q2: { ans: 'Turn left', exp: 'Turn left (belok kiri) ditandai dengan panah mengarah ke kiri.' },
+            q3: { ans: 'between', exp: '"Between" digunakan untuk menyatakan letak di antara dua tempat.' },
+            q4: { ans: 'hospital', exp: 'Rumah sakit dalam Bahasa Inggris adalah "hospital".' },
+            q5: { ans: 'go straight', exp: '"Go straight" berarti jalan lurus terus.' },
+            q6: { ans: 'Bakery', exp: 'Bakery adalah toko roti dan kue.' },
+            q7: { ans: 'False', exp: '"Opposite" berarti berseberangan / berada di seberang jalan.' },
+            q8: { ans: 'Bus stop', exp: 'Halte bus (Bus stop) adalah tempat menunggu transportasi umum bus.' },
+            q9: { ans: 'Excuse me, how can I get to the supermarket?', exp: 'Ungkapan sopan menanyakan arah menggunakan "Excuse me, how can I get to...?"' },
+            q10: { ans: 'The bakery is beside the supermarket', exp: '"Next to" memiliki arti yang sama dengan "beside" (di samping/sebelah).' }
+        };
+
+        document.getElementById('submit-lkpd-btn').addEventListener('click', () => {
+            const name = document.getElementById('student-name').value.trim();
+            const cls = document.getElementById('student-class').value.trim();
+
+            if (!name || !cls) {
+                sound.playError();
+                showToast('⚠️ Isi Nama dan Kelas Terlebih Dahulu!');
+                return;
+            }
+
+            let correctCount = 0;
+
+            for (let i = 1; i <= 10; i++) {
+                const qKey = `q${i}`;
+                let userAns = '';
+
+                if (i === 4 || i === 5) {
+                    userAns = document.getElementById(`ans-${qKey}`).value.trim().toLowerCase();
+                } else {
+                    userAns = document.querySelector(`input[name="${qKey}"]:checked`)?.value;
+                }
+
+                const box = document.getElementById(`box-${qKey}`);
+                const exp = document.getElementById(`exp-${qKey}`);
+                const answerData = lkpdAnswers[qKey];
+
+                box.classList.remove('correct', 'incorrect');
+                exp.classList.remove('show-correct', 'show-incorrect');
+
+                if (userAns === answerData.ans || (i === 5 && userAns === 'go straight ahead')) {
+                    correctCount++;
+                    box.classList.add('correct');
+                    exp.classList.add('show-correct');
+                    exp.innerHTML = `✅ <strong>Jawaban Benar!</strong> ${answerData.exp}`;
+                } else {
+                    box.classList.add('incorrect');
+                    exp.classList.add('show-incorrect');
+                    exp.innerHTML = `❌ <strong>Salah!</strong> Jawaban benar: <strong>${answerData.ans}</strong>. ${answerData.exp}`;
+                }
+            }
+
+            const finalGrade = correctCount * 10;
+            sound.playSuccess();
+            const badge = document.getElementById('grade-badge');
+            badge.style.display = 'inline-block';
+            badge.textContent = `Nilai: ${finalGrade} / 100 (${correctCount}/10 Benar)`;
+            showToast(`✅ LKPD Selesai! Nilai Kamu: ${finalGrade}`);
+        });
+
+        document.getElementById('reset-lkpd-btn').addEventListener('click', () => {
+            sound.playClick();
+            document.querySelectorAll('.lkpd-q-box').forEach(box => {
+                box.classList.remove('correct', 'incorrect');
+            });
+            document.querySelectorAll('.lkpd-explanation').forEach(exp => {
+                exp.classList.remove('show-correct', 'show-incorrect');
+                exp.innerHTML = '';
+            });
+            document.querySelectorAll('input[type="radio"]').forEach(r => r.checked = false);
+            document.getElementById('ans-q4').value = '';
+            document.getElementById('ans-q5').value = '';
+            document.getElementById('grade-badge').style.display = 'none';
+            showToast('LKPD Berhasil Di-reset');
+        });
+
+        /* --- TOAST HELPER --- */
+        function showToast(msg) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.style.display = 'block';
+            setTimeout(() => { toast.style.display = 'none'; }, 2600);
+        }
+    </script>
+</body>
+</html>
